@@ -72,7 +72,7 @@ def split(text, n):
 def save(text, filename):
     byteText = split(text, 8)
 
-    f = open(decompressedFilename, "wb")
+    f = open(filename, "wb")
     f.write(bytearray(int(i, 2) for i in byteText))
     f.close()
 
