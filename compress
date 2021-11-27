@@ -1,0 +1,155 @@
+#!/usr/bin/env python
+
+from textwrap import wrap
+import collections
+import time
+from os.path import exists
+import sys
+
+def readFile(filename):
+    f = open(filename, "rb")
+
+    byte = f.read(1)
+    text = ""
+    while byte:
+        text += (bin(ord(byte))[2:]).zfill(8)
+        byte = f.read(1)
+
+    f.close()
+    return text
+
+
+def split(text, n):
+    return wrap(text, n)
+
+
+def countFrequencies(array):
+    counts = dict(collections.Counter(array))
+    return sorted(counts.items(), key = lambda x: x[1], reverse = True)
+
+
+def whereToSplit(data):
+    if (len(data) == 1): return 0
+    if (len(data) == 2): return 1
+
+    top = 0
+    countTop = data[top][1]
+
+    bottom = len(data) - 1
+    countBottom = data[bottom][1]
+
+    while top != bottom:
+        if (countTop <= countBottom):
+            top += 1
+            countTop += data[top][1]
+        else:
+            bottom -= 1
+            countBottom += data[bottom][1]
+    
+    return top + 1
+
+
+def findCode(data, suffix = ""):
+    if (len(data) == 0):
+        return
+    
+    global tree
+    global code
+
+    if (len(data) == 1):
+        code[data[0][0]] = suffix
+
+        tree += "1" # LEAF
+        tree += data[0][0] # CODE
+
+        return
+    
+    tree += "0" # INNER NODE
+    
+    splitIndex = whereToSplit(data)
+    data1 = data[0 : splitIndex]
+    data2 = data[splitIndex: len(data)]
+
+    findCode(data1, suffix + "0")
+    findCode(data2, suffix + "1")
+
+
+def compress(originalText, n = 8):
+    global code
+    global tree
+    code = {}
+    tree = ""
+
+    splitText = split(originalText, n)
+    residueLengt = len(splitText[-1]) % n
+    residue = ""
+    if (residueLengt != 0):
+        residue = splitText[-1]
+        splitText.pop()
+    
+    frequency = countFrequencies(splitText)
+    findCode(frequency)
+
+    text = ""
+    for part in splitText:
+        text += code[part]
+    
+    text += residue
+
+    return (text, residueLengt)
+
+# 4 bits - word length
+# 4 bits - residue length
+# 3 bits - filler length
+# dictionary
+# text
+def save(wordLength, residueLength, dictionary, text, filename = "compressed.fan"):
+    wordLength = (bin(wordLength - 1)[2:]).zfill(8)[4:]
+    residueLength = (bin(residueLength)[2:]).zfill(8)[4:]
+    
+    fillerLength = 8 - (4 + 4 + 3 + len(text) + len(dictionary)) % 8
+    filler = "0" * fillerLength
+    fillerLength = (bin(fillerLength)[2:]).zfill(8)[5:]
+
+    text = wordLength + residueLength + fillerLength + dictionary + text + filler
+    byteText = split(text, 8)
+
+    f = open(filename, "wb")
+    f.write(bytearray(int(i, 2) for i in byteText))
+    f.close()
+
+    return text
+
+
+if len(sys.argv) != 4:
+	print("    Usage:")
+	print("    ./compress <input> <wordLength> <output>")
+	sys.exit(0)
+
+code = {}
+tree = ""
+
+filename = sys.argv[1]
+n = int(sys.argv[2])
+compressedFilename = sys.argv[3]
+
+if not exists(filename):
+    print(filename, ': file do not exist.')
+    sys.exit(0)
+
+if n < 2 or n > 16:
+    print("Word length is incorrect (should be between 2 and 16)")
+    sys.exit(0)
+
+print("Starting compression.")
+text = readFile(filename)
+startTime = time.time()
+
+(compressedText, residue) = compress(text, n)
+
+fullCompressed = save(n, residue, tree, compressedText, compressedFilename)
+
+print("Done.")
+print("Time (seconds):", int((time.time() - startTime) * 1000) / 1000)
+print("Original size   (bytes):", int(len(text) / 8))
+print("Compressed size (bytes):", int(len(fullCompressed) / 8))

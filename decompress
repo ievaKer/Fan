@@ -1,0 +1,105 @@
+#!/usr/bin/env python
+
+import time
+from os.path import exists
+import sys
+from textwrap import wrap
+
+
+def readFile(filename):
+    f = open(filename, "rb")
+
+    byte = f.read(1)
+    text = ""
+    while byte:
+        text += (bin(ord(byte))[2:]).zfill(8)
+        byte = f.read(1)
+
+    f.close()
+
+    wordLength = int(text[:4], 2) + 1
+    residueLength = int(text[4:8], 2)
+    fillerLength = int(text[8:11], 2)
+
+    text = text[4 + 4 + 3:]
+    if (fillerLength != 0):
+        text = text[:-fillerLength]
+
+    return (wordLength, residueLength, text)
+
+
+def decompress(compressed, words, residueLength):
+    residue = ""
+    if (residueLength > 0):
+        residue = compressed[-residueLength:]
+        compressed = compressed[:-residueLength]
+    
+    minLength = len(min(words.keys(), key = len))
+
+    decompressed = ""
+    i = 0
+    while i < len(compressed):
+        length = minLength
+        word = compressed[i : i + length]
+
+        while word not in words.keys():
+            length += 1
+            word = compressed[i : i + length]
+        
+        i += length
+        decompressed += words[word]
+    
+    return decompressed + residue
+
+def codeFromTree(wordLength, suffix = ""):
+    global text
+    global codes
+    isLeaf = text[0] == "0"
+    text = text[1:]
+
+    if isLeaf:
+        codeFromTree(wordLength, suffix + "0")
+        codeFromTree(wordLength, suffix + "1")
+    else:
+        codes[suffix] = text[: wordLength]
+        text = text[wordLength:]
+
+
+def split(text, n):
+    return wrap(text, n)
+
+
+def save(text, filename):
+    byteText = split(text, 8)
+
+    f = open(decompressedFilename, "wb")
+    f.write(bytearray(int(i, 2) for i in byteText))
+    f.close()
+
+
+if len(sys.argv) != 3:
+    print("    Usage:")
+    print("    ./decompress <input> <output>")
+    sys.exit(0)
+
+fileName = sys.argv[1]
+decompressedFilename = sys.argv[2]
+
+if not exists(fileName):
+  print(fileName, ": file does not exist.")
+  sys.exit(0)
+
+
+print("Starting decompression.")
+startTime = time.time()
+
+(wordLength, residueLength, text) = readFile(fileName)
+
+codes = {}
+codeFromTree(wordLength)
+
+decompressedText = decompress(text, codes, residueLength)
+save(decompressedText, decompressedFilename)
+
+print("Done.")
+print("Time (seconds):", int((time.time() - startTime) * 1000) / 1000)
