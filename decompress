@@ -54,13 +54,13 @@ def decompress(compressed, words, residueLength):
 def codeFromTree(wordLength, suffix = ""):
     global text
     global codes
-    isLeaf = text[0] == "0"
+    isInnerNode = text[0] == "0"
     text = text[1:]
 
-    if isLeaf:
+    if isInnerNode:
         codeFromTree(wordLength, suffix + "0")
         codeFromTree(wordLength, suffix + "1")
-    else:
+    else: # leaf
         codes[suffix] = text[: wordLength]
         text = text[wordLength:]
 
