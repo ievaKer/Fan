@@ -53,23 +53,33 @@ def whereToSplit(data):
 # iteration 1
 # data1 = {00: 4}, suffix = 0
 # data2 = {10: 3, 01: 2, 11: 1}, suffix = 1
+# tree = 0
 
 # iteration 2
 # 00 -> 0
+# tree = 0100
 #
 # data = {10: 3, 01: 2, 11: 1}, suffix = 1
 # data1 = {10: 3}, suffix = 10
 # data2 = {01: 2, 11: 1}, suffix = 11
+# tree = 01000
 
 # iteration 3
 # 10 -> 10
+# tree = 01000110
 #
 # data = {01: 2, 11: 1}
 # data1 = {01: 2}, suffix = 110
 # data2 = {11: 1}, suffix = 111
+# tree = 010001100
 
 # 01 -> 110
+# tree = 010001100101
 # 11 -> 111
+# tree = 010001100101111
+# n = 2
+
+# code = {00 -> 0, 10 -> 10, 01 -> 110, 11 -> 111}
 def findCode(data, suffix = ""):
     if (len(data) == 0):
         return
@@ -111,24 +121,32 @@ def compress(originalText, n = 8):
     frequency = countFrequencies(splitText)
     findCode(frequency)
 
+    # n = 2
+    # splitText = [00, 01, 10, 11, 00, 00, 01, 10, 10]
+    # frequency = {00: 4, 10: 3, 01: 2, 11: 1}
+    # code = {00 -> 0, 10 -> 10, 01 -> 110, 11 -> 111}
     text = ""
     for part in splitText:
         text += code[part]
+    # text = 0 110 10 111 0 0 110 10 10
     
     text += residue
 
     return (text, residueLengt)
 
-# 4 bits - word length
+# 4 bits - word length, [1:15], actually [2-1:16-1]
 # 4 bits - residue length
-# 3 bits - filler length
+# 3 bits - filler length [1:7], if 8 -> full byte, all good
 # dictionary
 # text
 def save(wordLength, residueLength, dictionary, text, filename = "compressed.fan"):
     wordLength = (bin(wordLength - 1)[2:]).zfill(8)[4:]
     residueLength = (bin(residueLength)[2:]).zfill(8)[4:]
     
-    fillerLength = 8 - (4 + 4 + 3 + len(text) + len(dictionary)) % 8
+    textLength = (4 + 4 + 3 + len(text) + len(dictionary))
+    fillerLength = 0
+    if textLength % 8 != 0:
+        fillerLength = 8 - textLength % 8
     filler = "0" * fillerLength
     fillerLength = (bin(fillerLength)[2:]).zfill(8)[5:]
 

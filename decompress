@@ -17,9 +17,9 @@ def readFile(filename):
 
     f.close()
 
-    wordLength = int(text[:4], 2) + 1
-    residueLength = int(text[4:8], 2)
-    fillerLength = int(text[8:11], 2)
+    wordLength = int(text[:4], 2) + 1 # n = 2
+    residueLength = int(text[4:8], 2) # 0
+    fillerLength = int(text[8:11], 2) 
 
     text = text[4 + 4 + 3:]
     if (fillerLength != 0):
@@ -38,6 +38,22 @@ def decompress(compressed, words, residueLength):
 
     decompressed = ""
     i = 0
+    # text = 011010111001101010
+    # code = {0 -> 00, 10 -> 10, 110 -> 01, 111 -> 11}
+    # minLength = 1
+    # word = text[0:1] = '0'
+    # decompressed = '00'
+    # i = 1
+    #
+    # iter2
+    # word = text[1:2] = '1'; not in codes -> length = 2
+    # word = text[1:3] = '11'; not in codes -> length = 3
+    # word = text[1:4] = '110'
+    # decompressed = '0001'
+    # i = 4
+
+    # length = minLength = 1
+    # word = text[4:5] = '1'
     while i < len(compressed):
         length = minLength
         word = compressed[i : i + length]
@@ -51,6 +67,7 @@ def decompress(compressed, words, residueLength):
     
     return decompressed + residue
 
+# text = 011010111001101010 = dictionary + compressedFile
 def codeFromTree(wordLength, suffix = ""):
     global text
     global codes
@@ -59,9 +76,9 @@ def codeFromTree(wordLength, suffix = ""):
 
     if isInnerNode:
         codeFromTree(wordLength, suffix + "0")
-        codeFromTree(wordLength, suffix + "1")
+        codeFromTree(wordLength, suffix + "1") # suffix = "11"
     else: # leaf
-        codes[suffix] = text[: wordLength]
+        codes[suffix] = text[: wordLength] # code = {0 -> 00, 10 -> 10, 110 -> 01, 111 -> 11}
         text = text[wordLength:]
 
 
