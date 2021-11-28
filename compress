@@ -49,6 +49,27 @@ def whereToSplit(data):
     return top + 1
 
 
+# data = {00: 4, 10: 3, 01: 2, 11: 1}
+# iteration 1
+# data1 = {00: 4}, suffix = 0
+# data2 = {10: 3, 01: 2, 11: 1}, suffix = 1
+
+# iteration 2
+# 00 -> 0
+#
+# data = {10: 3, 01: 2, 11: 1}, suffix = 1
+# data1 = {10: 3}, suffix = 10
+# data2 = {01: 2, 11: 1}, suffix = 11
+
+# iteration 3
+# 10 -> 10
+#
+# data = {01: 2, 11: 1}
+# data1 = {01: 2}, suffix = 110
+# data2 = {11: 1}, suffix = 111
+
+# 01 -> 110
+# 11 -> 111
 def findCode(data, suffix = ""):
     if (len(data) == 0):
         return
